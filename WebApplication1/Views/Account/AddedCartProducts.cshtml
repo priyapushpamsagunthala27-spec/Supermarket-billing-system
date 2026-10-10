@@ -1,0 +1,82 @@
+@model WebApplication1.Models.CartViewModel
+@using System.Linq
+@{
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    ViewBag.Title = "Added Cart Products";
+    var items = Model.Items ?? Enumerable.Empty<WebApplication1.Models.CartItemViewModel>();
+    var units = new[] { "kg", "g", "litre", "packet", "piece" };
+}
+
+<main class="cart-page">
+    <header class="cart-page-header">
+        <div><p class="dashboard-kicker mb-2">PMP Supermarket Billing</p><h1>Added Cart Products</h1><p>Review your selected products, @Model.Username.</p></div>
+        <div class="cart-page-actions"><a class="btn btn-success" href="@Url.Action("UserDashboard", "Account")">&#43; Add Product</a><a class="btn btn-outline-secondary" href="@Url.Action("UserDashboard", "Account")">Cancel</a></div>
+    </header>
+    @if (!string.IsNullOrWhiteSpace(Model.ErrorMessage))
+    {
+        <div class="alert alert-danger" role="alert">@Model.ErrorMessage</div>
+    }
+    @if (!string.IsNullOrWhiteSpace(Model.SuccessMessage))
+    {
+        <div class="alert alert-success" role="status">@Model.SuccessMessage</div>
+    }
+    @if (items.Any())
+    {
+        <div class="cart-card-list">
+            @foreach (var item in items)
+            {
+                <article class="cart-product-card">
+                    <div class="cart-product-image-wrap">
+                        @if (!string.IsNullOrWhiteSpace(item.ProductImage))
+                        {
+                            <img src="@Url.Content(item.ProductImage)" alt="@item.ProductName" />
+                        }
+                        else
+                        {
+                            <span aria-hidden="true">&#128722;</span>
+                        }
+                    </div>
+                    <div class="cart-product-details"><h2>@item.ProductName</h2><p class="cart-product-description">@(string.IsNullOrWhiteSpace(item.QuantityDescription) ? "Quantity description not provided" : item.QuantityDescription)</p><p>Current available stock: <strong>@item.CurrentQuantity.ToString("0.##")</strong></p></div>
+                    <div class="cart-product-edit">
+                        <form action="@Url.Action("UpdateCartItem", "Account")" method="post">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="cartItemId" value="@item.CartItemId" />
+                            <label>
+                                Needed quantity
+                                <input class="form-control" type="number" name="neededQuantity" value="@item.NeededQuantity.ToString("0.##")" min="0.01" step="0.01" required />
+                            </label>
+                            <label>
+                                Unit
+                                <select class="form-select" name="unit">
+                                    @foreach (var unit in units)
+                                    {
+                                        <option value="@unit" selected="@(unit == item.Unit ? "selected" : null)">@unit</option>
+                                    }
+                                </select>
+                            </label>
+                            <button class="btn btn-outline-success" type="submit">EDIT</button>
+                        </form>
+                        <form action="@Url.Action("DeleteCartItem", "Account")" method="post">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="cartItemId" value="@item.CartItemId" />
+                            <button class="btn btn-outline-danger" type="submit">DELETE</button>
+                        </form>
+                    </div>
+                </article>
+            }
+        </div>
+        <div class="cart-confirm-bar">
+            <span>@items.Count() @(items.Count() == 1 ? "product" : "products") in your cart</span>
+            @using (Html.BeginForm("ConfirmOrder", "Account", FormMethod.Post, new { @class = "d-inline" }))
+            {
+                @Html.AntiForgeryToken()
+                <button type="submit" class="btn btn-success">Confirm Order</button>
+            }
+            <button type="button" class="btn btn-outline-secondary" disabled>Pay &amp; Generate Bill</button>
+        </div>
+    }
+    else
+    {
+        <div class="cart-empty"><h2>Your cart is empty</h2><p>Add a product from the product dashboard to begin.</p><a class="btn btn-success" href="@Url.Action("UserDashboard", "Account")">Add Product</a></div>
+    }
+</main>

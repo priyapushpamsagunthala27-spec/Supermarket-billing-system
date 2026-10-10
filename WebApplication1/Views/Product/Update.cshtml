@@ -1,0 +1,517 @@
+@model WebApplication1.Models.ProductEditViewModel
+@{
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    ViewBag.Title = "Update Product";
+    var outOfStockProducts = ViewBag.OutOfStockProducts as IEnumerable<WebApplication1.Models.Product>;
+    var outOfStockList = outOfStockProducts != null ? outOfStockProducts.ToList() : new List<WebApplication1.Models.Product>();
+}
+
+<style>
+    /* Out of Stock Alert Banner */
+    .oos-alert-banner {
+        max-width: 1040px;
+        margin: 0 auto 28px;
+        background: linear-gradient(135deg, #fff5f5 0%, #fff1f0 45%, #ffe6e4 100%);
+        border: 2px solid #ef4444;
+        border-radius: 16px;
+        padding: 22px 24px;
+        box-shadow: 0 14px 34px rgba(239, 68, 68, 0.16), 0 3px 10px rgba(185, 28, 28, 0.08);
+        position: relative;
+    }
+
+    .oos-banner-header {
+        display: flex;
+        align-items: flex-start;
+        gap: 16px;
+        margin-bottom: 18px;
+        padding-bottom: 16px;
+        border-bottom: 1px solid #fecaca;
+    }
+
+    .oos-banner-icon-wrap {
+        width: 48px;
+        height: 48px;
+        min-width: 48px;
+        border-radius: 12px;
+        background: #fee2e2;
+        border: 2px solid #ef4444;
+        color: #dc2626;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 4px 12px rgba(220, 38, 38, 0.18);
+    }
+
+    .oos-warning-svg {
+        width: 28px;
+        height: 28px;
+    }
+
+    .oos-banner-heading-content {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .oos-banner-badge-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin-bottom: 6px;
+    }
+
+    .oos-badge-critical {
+        display: inline-flex;
+        align-items: center;
+        background: #dc2626;
+        color: #ffffff;
+        font-size: 0.72rem;
+        font-weight: 800;
+        letter-spacing: 0.06em;
+        padding: 3px 10px;
+        border-radius: 999px;
+        text-transform: uppercase;
+    }
+
+    .oos-badge-count {
+        display: inline-flex;
+        align-items: center;
+        background: #fef2f2;
+        color: #991b1b;
+        font-size: 0.76rem;
+        font-weight: 700;
+        padding: 3px 10px;
+        border-radius: 999px;
+        border: 1px solid #fca5a5;
+    }
+
+    .oos-banner-title {
+        color: #991b1b;
+        font-size: 1.35rem;
+        font-weight: 800;
+        letter-spacing: -0.01em;
+        margin: 0 0 4px 0;
+        line-height: 1.25;
+    }
+
+    .oos-banner-intro {
+        color: #7f1d1d;
+        font-size: 0.92rem;
+        margin: 0;
+        line-height: 1.45;
+    }
+
+    .oos-product-list {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 14px;
+    }
+
+    .oos-product-card {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        background: #ffffff;
+        border: 1.5px solid #fca5a5;
+        border-radius: 12px;
+        padding: 12px 14px;
+        cursor: pointer;
+        transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease, background-color 0.2s ease;
+        box-shadow: 0 3px 10px rgba(185, 28, 28, 0.06);
+        user-select: none;
+    }
+
+    .oos-product-card:hover {
+        transform: translateY(-2px);
+        border-color: #dc2626;
+        background-color: #fffafa;
+        box-shadow: 0 8px 22px rgba(220, 38, 38, 0.18);
+    }
+
+    .oos-product-card:focus-visible {
+        outline: 3px solid #dc2626;
+        outline-offset: 2px;
+    }
+
+    .oos-product-image-container {
+        width: 62px;
+        height: 62px;
+        min-width: 62px;
+        border-radius: 10px;
+        overflow: hidden;
+        background: #fef2f2;
+        border: 1px solid #fecaca;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .oos-product-image {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+    }
+
+    .oos-product-image-fallback {
+        font-size: 1.8rem;
+        color: #ef4444;
+        line-height: 1;
+    }
+
+    .oos-product-info {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .oos-product-category {
+        color: #991b1b;
+        font-size: 0.72rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        margin-bottom: 2px;
+    }
+
+    .oos-product-name {
+        color: #1e293b;
+        font-size: 1rem;
+        font-weight: 700;
+        margin: 0 0 6px 0;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .oos-product-unit-wrap {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .oos-unit-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background: #fee2e2;
+        color: #b91c1c;
+        border: 1px solid #f87171;
+        border-radius: 6px;
+        padding: 3px 8px;
+        font-size: 0.8rem;
+        font-weight: 800;
+        line-height: 1.2;
+    }
+
+    .oos-pulse-indicator {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: #dc2626;
+        display: inline-block;
+        animation: oos-pulse-anim 1.8s infinite;
+    }
+
+    @@keyframes oos-pulse-anim {
+        0% { opacity: 1; transform: scale(1); }
+        50% { opacity: 0.35; transform: scale(0.8); }
+        100% { opacity: 1; transform: scale(1); }
+    }
+
+    .oos-product-actions {
+        display: flex;
+        align-items: center;
+    }
+
+    .oos-update-btn {
+        background: #dc2626 !important;
+        border-color: #dc2626 !important;
+        color: #ffffff !important;
+        font-weight: 700;
+        font-size: 0.8rem;
+        border-radius: 8px;
+        padding: 6px 12px;
+        white-space: nowrap;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        transition: background 0.18s ease, transform 0.18s ease;
+    }
+
+    .oos-product-card:hover .oos-update-btn {
+        background: #b91c1c !important;
+        border-color: #b91c1c !important;
+        transform: scale(1.04);
+    }
+
+    .oos-pencil-icon {
+        font-size: 0.85rem;
+    }
+
+    @@media (max-width: 576px) {
+        .oos-alert-banner {
+            padding: 16px;
+        }
+        .oos-product-list {
+            grid-template-columns: 1fr;
+        }
+        .oos-banner-header {
+            flex-direction: column;
+        }
+    }
+</style>
+
+<main class="product-page">
+    <div class="product-page-header">
+        <div>
+            <p class="dashboard-kicker mb-1">Catalogue workspace</p>
+            <h1 class="product-page-title mb-2">Update Product</h1>
+            <p class="product-page-intro mb-0">Select a product, review its details, and save your changes.</p>
+        </div>
+        <div class="product-id-note"><span class="product-id-symbol">#</span><span><strong>Product ID</strong><small>Read-only database identity</small></span></div>
+    </div>
+
+    @if (outOfStockList.Count > 0)
+    {
+        <section class="oos-alert-banner" role="alert" aria-live="assertive" aria-labelledby="oos-banner-title">
+            <div class="oos-banner-header">
+                <div class="oos-banner-icon-wrap" aria-hidden="true">
+                    <svg class="oos-warning-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+                        <line x1="12" y1="9" x2="12" y2="13"></line>
+                        <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                    </svg>
+                </div>
+                <div class="oos-banner-heading-content">
+                    <div class="oos-banner-badge-row">
+                        <span class="oos-badge-critical">CRITICAL STOCK ALERT</span>
+                        <span class="oos-badge-count">@(outOfStockList.Count) @(outOfStockList.Count == 1 ? "Product" : "Products") Out of Stock</span>
+                    </div>
+                    <h2 id="oos-banner-title" class="oos-banner-title">Action Required: Inventory Exhausted</h2>
+                    <p class="oos-banner-intro">The following @(outOfStockList.Count == 1 ? "product currently has" : "products currently have") <strong>0 quantity</strong>. Select any item below or click Update to edit its details and restock immediately.</p>
+                </div>
+            </div>
+
+            <div class="oos-product-list" role="list">
+                @foreach (var item in outOfStockList)
+                {
+                    <div class="oos-product-card"
+                         role="button"
+                         tabindex="0"
+                         data-id="@item.ProductId"
+                         data-name="@item.ProductName"
+                         data-category="@item.Category"
+                         title="Click to update @item.ProductName">
+                        <div class="oos-product-image-container">
+                            @if (!string.IsNullOrWhiteSpace(item.ProductImage))
+                            {
+                                <img src="@Url.Content(item.ProductImage)" alt="@item.ProductName" class="oos-product-image" loading="lazy" />
+                            }
+                            else
+                            {
+                                <div class="oos-product-image-fallback" aria-label="No image available">&#128722;</div>
+                            }
+                        </div>
+                        <div class="oos-product-info">
+                            <div class="oos-product-category">@item.Category</div>
+                            <h3 class="oos-product-name">@item.ProductName</h3>
+                            <div class="oos-product-unit-wrap">
+                                <span class="oos-unit-pill">
+                                    <span class="oos-pulse-indicator" aria-hidden="true"></span>
+                                    0 @(item.Unit) (no stock)
+                                </span>
+                            </div>
+                        </div>
+                        <div class="oos-product-actions">
+                            <a href="@Url.Action("Update", "Product", new { id = item.ProductId })"
+                               class="btn btn-danger btn-sm oos-update-btn"
+                               data-id="@item.ProductId"
+                               data-name="@item.ProductName"
+                               data-category="@item.Category"
+                               title="Update @item.ProductName">
+                                <span class="oos-pencil-icon">&#9998;</span> Update
+                            </a>
+                        </div>
+                    </div>
+                }
+            </div>
+        </section>
+    }
+
+    @if (ViewBag.SuccessMessage != null)
+    {
+        <div class="alert alert-success product-success" role="status"><strong>@ViewBag.SuccessMessage</strong><span>Product ID: <b>#@Model.ProductId</b></span></div>
+    }
+    @Html.ValidationSummary(true, "Please correct the highlighted details.", new { @class = "alert alert-danger" })
+
+    <section class="product-form product-selection-panel" aria-labelledby="selection-title">
+        <div class="product-panel-heading"><span class="product-panel-icon">&#128269;</span><div><h2 id="selection-title">Find a product</h2><p>Choose a category and product name to load the current record.</p></div></div>
+        <div class="row g-3">
+            <div class="col-md-6">
+                <label class="form-label" for="lookupCategory">Product category</label>
+                <select id="lookupCategory" class="form-select"><option value="">Select a category</option>@foreach (string category in Model.Categories ?? new string[0]) { <option value="@category">@category</option> }</select>
+            </div>
+            <div class="col-md-6">
+                <label class="form-label" for="LookupProductName">Product name</label>
+                <select id="LookupProductName" class="form-select" disabled="disabled"><option value="">Select a product</option></select>
+            </div>
+        </div>
+        <p id="lookupMessage" class="lookup-message" role="status"></p>
+    </section>
+
+    <section id="editPanel" class="product-form update-form-panel @(Model.ProductId > 0 ? "" : "d-none")" aria-labelledby="edit-title">
+        <div class="product-panel-heading"><span class="product-panel-icon">&#9998;</span><div><h2 id="edit-title">Product details</h2><p>ProductId cannot be changed.</p></div></div>
+        @using (Html.BeginForm("Update", "Product", FormMethod.Post, new { enctype = "multipart/form-data" }))
+        {
+            @Html.AntiForgeryToken()
+            @Html.HiddenFor(model => model.ProductId)
+            @Html.HiddenFor(model => model.CurrentImage)
+            <div class="row g-3">
+                <div class="col-md-4"><label class="form-label">Product ID</label><input id="ProductIdDisplay" class="form-control" value="@(Model.ProductId > 0 ? Model.ProductId.ToString() : "")" readonly="readonly" /></div>
+                <div class="col-md-8">@Html.LabelFor(model => model.ProductName, new { @class = "form-label" })@Html.TextBoxFor(model => model.ProductName, new { @class = "form-control", maxlength = "150" })@Html.ValidationMessageFor(model => model.ProductName, null, new { @class = "text-danger small" })</div>
+                <div class="col-md-6">@Html.LabelFor(model => model.Category, new { @class = "form-label" })@Html.DropDownListFor(model => model.Category, new SelectList(Model.Categories), "Select a category", new { @class = "form-select", id = "editCategory" })@Html.ValidationMessageFor(model => model.Category, null, new { @class = "text-danger small" })</div>
+                <div class="col-md-6">@Html.LabelFor(model => model.Price, new { @class = "form-label" })<div class="input-group"><span class="input-group-text">&#8377;</span>@Html.TextBoxFor(model => model.Price, new { @class = "form-control", type = "number", min = "0.01", step = "0.01" })</div>@Html.ValidationMessageFor(model => model.Price, null, new { @class = "text-danger small" })</div>
+                <div class="col-md-6">@Html.LabelFor(model => model.Quantity, new { @class = "form-label" })@Html.TextBoxFor(model => model.Quantity, new { @class = "form-control", type = "number", min = "0.01", step = "0.01" })@Html.ValidationMessageFor(model => model.Quantity, null, new { @class = "text-danger small" })</div>
+                <div class="col-md-6">@Html.LabelFor(model => model.QuantityDescription, new { @class = "form-label" })@Html.TextBoxFor(model => model.QuantityDescription, new { @class = "form-control", maxlength = "50", placeholder = "e.g. 250g or 1 litre" })@Html.ValidationMessageFor(model => model.QuantityDescription, null, new { @class = "text-danger small" })</div>
+                <div class="col-md-6">@Html.LabelFor(model => model.Unit, new { @class = "form-label" })@Html.DropDownListFor(model => model.Unit, new SelectList(Model.Units), "Select a unit", new { @class = "form-select" })@Html.ValidationMessageFor(model => model.Unit, null, new { @class = "text-danger small" })</div>
+                <div class="col-12"><label class="form-label" for="ProductPhoto">Change product photo <span class="text-muted fw-normal">(optional)</span></label><input type="file" id="ProductPhoto" name="ProductPhoto" accept=".jpg,.jpeg,.png,image/jpeg,image/png" class="form-control" />@Html.ValidationMessageFor(model => model.ProductPhoto, null, new { @class = "text-danger small" })<small class="photo-help text-start">Current image: <span id="currentImageText">@(Model.CurrentImage ?? "None")</span>. JPG, JPEG, or PNG up to 5 MB.</small></div>
+            </div>
+            <div class="product-form-actions"><a class="btn btn-outline-secondary" href="@Url.Action("AdminDashboard", "Account")">Back to Admin Dashboard</a><button type="submit" class="btn btn-success product-submit">Update Product</button></div>
+        }
+    </section>
+</main>
+
+@section scripts {
+    @Scripts.Render("~/bundles/jqueryval")
+    <script>
+        (function () {
+            var category = document.getElementById('lookupCategory');
+            var productNames = document.getElementById('LookupProductName');
+            var message = document.getElementById('lookupMessage');
+            var editPanel = document.getElementById('editPanel');
+            var productDetailsUrl = '@Url.Action("ProductDetails", "Product")';
+            var productNamesUrl = '@Url.Action("ProductNames", "Product")';
+            function setMessage(text) { message.textContent = text || ''; }
+
+            function loadDetails() {
+                if (!category.value || !productNames.value) return;
+                setMessage('Loading product details...');
+                $.getJSON(productDetailsUrl, { category: category.value, productName: productNames.value }, function (product) {
+                    if (!product) { setMessage('Product details could not be found.'); return; }
+                    $('#ProductId').val(product.ProductId);
+                    $('#ProductIdDisplay').val(product.ProductId);
+                    $('#ProductName').val(product.ProductName);
+                    $('#editCategory').val(product.Category);
+                    $('#Price').val(product.Price);
+                    $('#Quantity').val(product.Quantity);
+                    $('#QuantityDescription').val(product.QuantityDescription || '');
+                    $('#Unit').val(product.Unit);
+                    $('#CurrentImage').val(product.ProductImage || '');
+                    $('#currentImageText').text(product.ProductImage || 'None');
+                    editPanel.classList.remove('d-none');
+                    setMessage('Product details loaded.');
+                }).fail(function () { setMessage('Unable to load product details.'); });
+            }
+
+            function selectAndLoadProduct(selectedCategory, selectedProductName) {
+                if (!selectedCategory || !selectedProductName) return;
+                category.value = selectedCategory;
+                setMessage('Loading product list for ' + selectedCategory + '...');
+                $.getJSON(productNamesUrl, { category: selectedCategory }, function (names) {
+                    productNames.innerHTML = '<option value="">Select a product</option>';
+                    $.each(names, function (_, name) {
+                        var opt = $('<option>').val(name).text(name);
+                        if (name === selectedProductName) {
+                            opt.prop('selected', true);
+                        }
+                        opt.appendTo(productNames);
+                    });
+                    productNames.disabled = false;
+                    productNames.value = selectedProductName;
+
+                    setMessage('Loading product details for ' + selectedProductName + '...');
+                    $.getJSON(productDetailsUrl, { category: selectedCategory, productName: selectedProductName }, function (product) {
+                        if (!product) {
+                            setMessage('Product details could not be found.');
+                            return;
+                        }
+                        $('#ProductId').val(product.ProductId);
+                        $('#ProductIdDisplay').val(product.ProductId);
+                        $('#ProductName').val(product.ProductName);
+                        $('#editCategory').val(product.Category);
+                        $('#Price').val(product.Price);
+                        $('#Quantity').val(product.Quantity);
+                        $('#QuantityDescription').val(product.QuantityDescription || '');
+                        $('#Unit').val(product.Unit);
+                        $('#CurrentImage').val(product.ProductImage || '');
+                        $('#currentImageText').text(product.ProductImage || 'None');
+                        editPanel.classList.remove('d-none');
+                        setMessage('Loaded out-of-stock product "' + product.ProductName + '". Update its details below.');
+
+                        editPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+                        setTimeout(function () {
+                            var qtyInput = document.getElementById('Quantity');
+                            if (qtyInput) {
+                                qtyInput.focus();
+                                qtyInput.select();
+                            }
+                        }, 300);
+                    }).fail(function () {
+                        setMessage('Unable to load product details.');
+                    });
+                }).fail(function () {
+                    setMessage('Unable to load products.');
+                });
+            }
+
+            category.addEventListener('change', function () {
+                productNames.innerHTML = '<option value="">Select a product</option>';
+                productNames.disabled = true;
+                editPanel.classList.add('d-none');
+                if (!category.value) return;
+                setMessage('Loading products...');
+                $.getJSON(productNamesUrl, { category: category.value }, function (names) {
+                    $.each(names, function (_, name) { $('<option>').val(name).text(name).appendTo(productNames); });
+                    productNames.disabled = false;
+                    setMessage(names.length ? 'Select a product to load its details.' : 'No products found in this category.');
+                }).fail(function () { setMessage('Unable to load products.'); });
+            });
+
+            productNames.addEventListener('change', loadDetails);
+
+            $(document).on('click', '.oos-product-card', function (e) {
+                e.preventDefault();
+                var cat = $(this).data('category');
+                var name = $(this).data('name');
+                selectAndLoadProduct(cat, name);
+            });
+
+            $(document).on('keydown', '.oos-product-card', function (e) {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    var cat = $(this).data('category');
+                    var name = $(this).data('name');
+                    selectAndLoadProduct(cat, name);
+                }
+            });
+
+            var initialCategory = '@Html.Raw(HttpUtility.JavaScriptStringEncode(Model.Category ?? ""))';
+            var initialProductName = '@Html.Raw(HttpUtility.JavaScriptStringEncode(Model.ProductName ?? ""))';
+            if (initialCategory && initialProductName) {
+                category.value = initialCategory;
+                $.getJSON(productNamesUrl, { category: initialCategory }, function (names) {
+                    productNames.innerHTML = '<option value="">Select a product</option>';
+                    $.each(names, function (_, name) {
+                        var opt = $('<option>').val(name).text(name);
+                        if (name === initialProductName) {
+                            opt.prop('selected', true);
+                        }
+                        opt.appendTo(productNames);
+                    });
+                    productNames.disabled = false;
+                });
+            }
+        }());
+    </script>
+}

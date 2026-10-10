@@ -1,0 +1,134 @@
+@model WebApplication1.Models.UserDashboardViewModel
+@using System.Linq
+@{
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    ViewBag.Title = "Product Dashboard";
+    var products = Model.Products ?? Enumerable.Empty<WebApplication1.Models.Product>();
+}
+
+<main class="catalog-page" id="catalog-top">
+    <aside class="catalog-sidebar" aria-label="Product dashboard navigation">
+        <a class="catalog-sidebar-brand" href="#catalog-top"><span class="pmp-logo catalog-logo" aria-hidden="true">PMP</span><span><strong>PMP Supermarket</strong><small>Product dashboard</small></span></a>
+        <nav class="catalog-nav">
+            <a class="catalog-nav-option catalog-nav-option-active" href="#catalog-top"><span class="catalog-nav-icon" aria-hidden="true">&#9632;</span><span>Product Catalog</span></a>
+            <div class="catalog-category-list" aria-label="Product categories">
+                @foreach (var category in Model.Categories)
+                {
+                    var categoryId = "category-" + category.Replace(" ", "-").ToLowerInvariant();
+                    <a class="catalog-category-link" href="#@categoryId" data-category="@category"><span class="catalog-category-dot" aria-hidden="true"></span><span>@category</span></a>
+                }
+            </div>
+            <a class="catalog-nav-option" href="@Url.Action("AddedCartProducts", "Account")"><span class="catalog-nav-icon" aria-hidden="true">&#128722;</span><span>Added Cart Products</span></a>
+            <a class="catalog-nav-option" href="@Url.Action("BillTransaction", "Account")"><span class="catalog-nav-icon" aria-hidden="true">&#128196;</span><span>Bill Transaction</span></a>
+        </nav>
+        @using (Html.BeginForm("Logout", "Account", FormMethod.Post, new { @class = "catalog-back-link" }))
+        {
+            @Html.AntiForgeryToken()
+            <button type="submit" class="btn btn-link p-0 catalog-back-link">&#8592; Logout</button>
+        }
+    </aside>
+
+    <section class="catalog-content" aria-labelledby="catalog-title">
+        <header class="catalog-header">
+            <div><p class="dashboard-kicker mb-2">PMP Supermarket Billing</p><h1 id="catalog-title">Hello, Welcome @Model.Username</h1><p>Select a product to add it to your cart.</p></div>
+            <div class="catalog-header-actions"><a class="btn btn-success" href="@Url.Action("AddedCartProducts", "Account")">&#128722; View Cart</a><button type="button" id="confirm-cart-button" class="btn btn-outline-success">Confirm Your Cart</button><a class="btn btn-outline-secondary" href="@Url.Action("AddedCartProducts", "Account")">Cancel</a></div>
+        </header>
+
+        <div class="cart-preview-card" id="cart-preview-card" hidden>
+            <div class="cart-preview-header"><h2>Your Cart</h2></div>
+            <div class="cart-preview-scroll">
+                <table class="cart-preview-table">
+                    <thead>
+                        <tr>
+                            <th>Product Name</th>
+                            <th>Quantity</th>
+                            <th>Unit</th>
+                        </tr>
+                    </thead>
+                    <tbody id="cart-preview-body"></tbody>
+                </table>
+            </div>
+            <div class="cart-preview-actions">
+                <button type="button" class="btn btn-outline-primary" id="add-further-products-button">Add Further Products</button>
+                <button type="button" class="btn btn-success" id="next-cart-button">Next</button>
+            </div>
+        </div>
+
+        <div class="catalog-filter" role="search"><label for="category-filter">Search by category</label><div class="catalog-search-wrap"><span aria-hidden="true">&#128269;</span><input id="category-filter" type="search" placeholder="Type a category, for example Groceries" autocomplete="off" /><button id="clear-category-filter" type="button" title="Clear category filter" aria-label="Clear category filter">&#10005;</button></div><span id="category-filter-status" class="catalog-filter-status" aria-live="polite"></span></div>
+        <div class="catalog-sections" id="catalog-sections">
+            @foreach (var category in Model.Categories)
+            {
+                var categoryId = "category-" + category.Replace(" ", "-").ToLowerInvariant();
+                var categoryProducts = products.Where(product => string.Equals(product.Category, category, System.StringComparison.OrdinalIgnoreCase)).ToList();
+                <section class="catalog-category-section" id="@categoryId" data-category-section="@category" aria-labelledby="@categoryId-title"><div class="catalog-section-heading"><div><p class="catalog-section-label">Category</p><h2 id="@categoryId-title">@category</h2></div><span class="catalog-count">@categoryProducts.Count @(categoryProducts.Count == 1 ? "product" : "products")</span></div>
+                    @if (categoryProducts.Any())
+                    {
+                        <div class="catalog-product-grid">
+                            @foreach (var product in categoryProducts)
+                            {
+                                var isLowStock = product.Quantity < 5;
+                                <button type="button" class="catalog-product-card catalog-product-card-button" data-product-id="@product.ProductId" aria-label="Add @product.ProductName to cart"><span class="catalog-product-image-wrap">@if (!string.IsNullOrWhiteSpace(product.ProductImage)) { <img class="catalog-product-image" src="@Url.Content(product.ProductImage)" alt="@product.ProductName" /> } else { <span class="catalog-product-image-placeholder" aria-hidden="true">&#128722;</span> }</span><span class="catalog-product-details"><strong class="catalog-product-name">@product.ProductName</strong><span class="catalog-product-quantity">@(string.IsNullOrWhiteSpace(product.QuantityDescription) ? product.Quantity.ToString("0.##") + " " + product.Unit : product.QuantityDescription)</span><span class="catalog-product-meta">Stock: @product.Quantity.ToString("0.##") @product.Unit</span><span class="catalog-product-footer"><strong class="catalog-product-price">&#8377;@product.Price.ToString("N2")</strong></span></span></button>
+                            }
+                        </div>
+                    }
+                    else { <p class="catalog-empty-category">No products in this category yet.</p> }
+                </section>
+            }
+            <p class="catalog-no-results" id="catalog-no-results">No categories match your search.</p>
+        </div>
+    </section>
+
+</main>
+
+<div class="cart-modal" id="product-modal" hidden><div class="cart-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="product-modal-title"><button type="button" class="cart-modal-close" id="product-modal-close" aria-label="Close">&#10005;</button><p class="dashboard-kicker mb-2">Add to cart</p><h2 id="product-modal-title">Product</h2><p class="cart-modal-stock">Available Stock: <strong id="product-modal-stock">0</strong></p><form id="add-to-cart-form">@Html.AntiForgeryToken()<input type="hidden" id="modal-product-id" name="productId" /><label for="modal-needed-quantity">Needed Quantity Description</label><input class="form-control" id="modal-needed-quantity" name="neededQuantity" type="number" min="0.01" step="0.01" value="1" required /><label for="modal-unit">Unit</label><input class="form-control" id="modal-unit" name="unit" type="text" readonly aria-readonly="true" /><p class="cart-modal-error" id="modal-error" role="alert"></p><div class="cart-modal-actions"><button type="submit" class="btn btn-success">Add to Cart</button><button type="button" class="btn btn-outline-secondary" id="product-modal-cancel">Cancel</button></div></form></div></div>
+
+@section scripts {
+<script>
+(function () {
+    var filter = document.getElementById('category-filter'), clearButton = document.getElementById('clear-category-filter'), status = document.getElementById('category-filter-status'), sections = Array.prototype.slice.call(document.querySelectorAll('[data-category-section]')), noResults = document.getElementById('catalog-no-results');
+    function applyFilter(value) { var query = value.trim().toLowerCase(), visible = 0; sections.forEach(function (section) { var matches = !query || section.getAttribute('data-category-section').toLowerCase().indexOf(query) !== -1; section.hidden = !matches; if (matches) { visible++; } }); noResults.hidden = visible !== 0; status.textContent = query ? visible + (visible === 1 ? ' category shown' : ' categories shown') : ''; }
+    filter.addEventListener('input', function () { applyFilter(filter.value); }); clearButton.addEventListener('click', function () { filter.value = ''; applyFilter(''); filter.focus(); }); document.querySelectorAll('[data-category]').forEach(function (link) { link.addEventListener('click', function () { filter.value = link.getAttribute('data-category'); applyFilter(filter.value); }); });
+    var modal = document.getElementById('product-modal'), form = document.getElementById('add-to-cart-form'), error = document.getElementById('modal-error');
+    var cartPreviewCard = document.getElementById('cart-preview-card');
+    var cartPreviewBody = document.getElementById('cart-preview-body');
+    var confirmCartButton = document.getElementById('confirm-cart-button');
+    var nextCartButton = document.getElementById('next-cart-button');
+    var addFurtherProductsButton = document.getElementById('add-further-products-button');
+    function closeModal() { modal.hidden = true; error.textContent = ''; }
+    function renderCartPreview(items) {
+        if (!items || !items.length) {
+            cartPreviewBody.innerHTML = '<tr><td colspan="3" class="cart-preview-empty">Your cart is empty.</td></tr>';
+        } else {
+            cartPreviewBody.innerHTML = items.map(function (item) {
+                return '<tr><td>' + (item.ProductName || 'Unknown product') + '</td><td>' + item.NeededQuantity + '</td><td>' + (item.Unit || '') + '</td></tr>';
+            }).join('');
+        }
+        cartPreviewCard.hidden = false;
+        cartPreviewCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+    function refreshCartPreview() {
+        fetch('@Url.Action("CartPreview", "Account")', { method: 'GET', headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+            .then(function (response) {
+                if (!response.ok) { throw new Error('Unable to load your cart.'); }
+                return response.json();
+            })
+            .then(function (result) {
+                if (!result || !result.success) {
+                    throw new Error(result && result.message ? result.message : 'Unable to load your cart.');
+                }
+                renderCartPreview(result.items || []);
+            })
+            .catch(function (requestError) {
+                cartPreviewBody.innerHTML = '<tr><td colspan="3" class="cart-preview-empty">' + requestError.message + '</td></tr>';
+                cartPreviewCard.hidden = false;
+            });
+    }
+    document.querySelectorAll('[data-product-id]').forEach(function (card) { card.addEventListener('click', function () { var id = card.getAttribute('data-product-id'); fetch('@Url.Action("ProductDetails", "Account")?productId=' + encodeURIComponent(id)).then(function (response) { if (!response.ok) { throw new Error('Unable to load the latest product stock.'); } return response.json(); }).then(function (product) { if (!product) { throw new Error('The selected product is no longer available.'); } document.getElementById('product-modal-title').textContent = product.ProductName; document.getElementById('product-modal-stock').textContent = product.Quantity + ' ' + product.Unit; document.getElementById('modal-product-id').value = product.ProductId; document.getElementById('modal-unit').value = (product.Unit || '').trim(); document.getElementById('modal-needed-quantity').value = 1; modal.hidden = false; document.getElementById('modal-needed-quantity').focus(); }).catch(function (requestError) { error.textContent = requestError.message; modal.hidden = false; }); }); });
+    document.getElementById('product-modal-close').addEventListener('click', closeModal); document.getElementById('product-modal-cancel').addEventListener('click', closeModal);
+    form.addEventListener('submit', function (event) { event.preventDefault(); error.textContent = ''; fetch('@Url.Action("AddToCart", "Account")', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8', 'X-Requested-With': 'XMLHttpRequest' }, body: new URLSearchParams(new FormData(form)) }).then(function (response) { return response.text().then(function (body) { var result; try { result = JSON.parse(body); } catch (parseError) { throw new Error('The server rejected the cart request. Please sign in again and retry.'); } if (!response.ok) { throw new Error(result.message || 'The item could not be added to the cart.'); } return result; }); }).then(function (result) { if (!result.success) { error.textContent = result.message; return; } closeModal(); }).catch(function (requestError) { error.textContent = requestError.message; }); });
+    confirmCartButton.addEventListener('click', refreshCartPreview);
+    addFurtherProductsButton.addEventListener('click', function () { cartPreviewCard.hidden = true; document.getElementById('catalog-top').scrollIntoView({ behavior: 'smooth', block: 'start' }); });
+    nextCartButton.addEventListener('click', function () { window.location.href = '@Url.Action("AddedCartProducts", "Account")'; });
+}());
+</script>
+}

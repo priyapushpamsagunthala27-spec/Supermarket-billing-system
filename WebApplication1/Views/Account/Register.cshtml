@@ -1,0 +1,44 @@
+@model WebApplication1.Models.RegisterViewModel
+@{
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    ViewBag.Title = "Register";
+}
+
+<div class="account-page">
+    <section class="account-shell" aria-labelledby="register-title">
+        <div class="text-center">
+            <div class="pmp-logo" aria-label="PMP Supermarket">PMP</div>
+            <h1 id="register-title" class="account-title h3">Create your account</h1>
+            <p class="account-subtitle mb-4">Start using PMP Supermarket Billing</p>
+        </div>
+
+        @Html.ValidationSummary(true, "Please correct the highlighted details.", new { @class = "alert alert-danger" })
+        @using (Html.BeginForm("Register", "Account", FormMethod.Post))
+        {
+            @Html.AntiForgeryToken()
+            <div class="mb-3">
+                @Html.LabelFor(model => model.Username, new { @class = "form-label fw-semibold" })
+                @Html.TextBoxFor(model => model.Username, new { @class = "form-control", autocomplete = "username", autofocus = "autofocus" })
+                @Html.ValidationMessageFor(model => model.Username, null, new { @class = "text-danger small" })
+            </div>
+            <div class="mb-3">
+                @Html.LabelFor(model => model.Password, new { @class = "form-label fw-semibold" })
+                @Html.PasswordFor(model => model.Password, new { @class = "form-control", autocomplete = "new-password" })
+                @Html.ValidationMessageFor(model => model.Password, null, new { @class = "text-danger small" })
+            </div>
+            <div class="mb-4">
+                @Html.LabelFor(model => model.ConfirmPassword, new { @class = "form-label fw-semibold" })
+                @Html.PasswordFor(model => model.ConfirmPassword, new { @class = "form-control", autocomplete = "new-password" })
+                @Html.ValidationMessageFor(model => model.ConfirmPassword, null, new { @class = "text-danger small" })
+            </div>
+            <div class="d-grid gap-2">
+                <button type="submit" class="btn btn-success btn-lg">Create account</button>
+                @Html.ActionLink("Back to login", "Login", "Account", null, new { @class = "btn btn-outline-secondary" })
+            </div>
+        }
+    </section>
+</div>
+
+@section scripts {
+    @Scripts.Render("~/bundles/jqueryval")
+}

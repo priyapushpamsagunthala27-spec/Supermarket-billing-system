@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 500" role="img" aria-label="Abstract supermarket aisle pattern">
+  <defs>
+    <linearGradient id="wash" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#083f2d"/>
+      <stop offset="1" stop-color="#126b4a"/>
+    </linearGradient>
+    <pattern id="shelves" width="90" height="90" patternUnits="userSpaceOnUse">
+      <path d="M8 15h74M8 45h74M8 75h74" stroke="#9bd5ae" stroke-opacity=".18" stroke-width="5"/>
+      <path d="M18 15v18M42 45v18M68 75v12" stroke="#d5f1dc" stroke-opacity=".15" stroke-width="9"/>
+      <circle cx="25" cy="55" r="5" fill="#f7c873" fill-opacity=".22"/>
+      <circle cx="75" cy="25" r="4" fill="#f7c873" fill-opacity=".2"/>
+    </pattern>
+  </defs>
+  <rect width="900" height="500" fill="url(#wash)"/>
+  <rect width="900" height="500" fill="url(#shelves)"/>
+  <path d="M0 410L450 250 900 410V500H0Z" fill="#052b20" fill-opacity=".24"/>
+  <path d="M450 250V500M280 310L120 500M620 310l160 190" stroke="#c4e8ce" stroke-opacity=".1" stroke-width="3"/>
+</svg>

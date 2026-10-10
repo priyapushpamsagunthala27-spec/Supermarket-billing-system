@@ -1,0 +1,50 @@
+@model WebApplication1.Models.UserDashboardViewModel
+@using System.Linq
+@{
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    ViewBag.Title = "Bill Transaction";
+    var bills = Model.Bills ?? Enumerable.Empty<WebApplication1.Models.BillHistoryViewModel>();
+    var selectedBillItems = Model.SelectedBill == null ? Enumerable.Empty<WebApplication1.Models.BillingItemViewModel>() : (Model.SelectedBill.Items ?? Enumerable.Empty<WebApplication1.Models.BillingItemViewModel>());
+}
+
+<main class="bill-transaction-page">
+    <header class="bill-transaction-page-header">
+        <div>
+            <p class="dashboard-kicker mb-2">PMP Supermarket Billing</p>
+            <h1>Bill Transaction</h1>
+            <p>View your previous bills and purchased products.</p>
+        </div>
+        <a class="btn btn-outline-secondary" href="@Url.Action("UserDashboard", "Account")">Back to User Dashboard</a>
+    </header>
+
+    <section class="bill-transaction-card" aria-labelledby="bill-history-title">
+        <div class="bill-transaction-heading">
+            <div><p class="dashboard-kicker mb-2">Purchase records</p><h2 id="bill-history-title">Your Bills</h2></div>
+        </div>
+        <form class="bill-transaction-filters" method="get" action="@Url.Action("BillTransaction", "Account")">
+            <div><label for="bill-number-filter">Bill Number</label><input id="bill-number-filter" name="billNumber" class="form-control" type="search" value="@Model.BillNumberFilter" placeholder="Search bill number" /></div>
+            <div><label for="bill-date-filter">Exact Date</label><input id="bill-date-filter" name="billDate" class="form-control" type="date" value="@Model.BillDateFilter" /></div>
+            <div><label for="bill-month-filter">Month</label><select id="bill-month-filter" name="billMonth" class="form-select"><option value="">All months</option>@for (var month = 1; month <= 12; month++) { <option value="@month" @(Model.BillMonthFilter == month ? "selected" : "")>@System.Globalization.CultureInfo.CurrentCulture.DateTimeFormat.GetMonthName(month)</option> }</select></div>
+            <div><label for="bill-year-filter">Year</label><select id="bill-year-filter" name="billYear" class="form-select"><option value="">All years</option><option value="2026" @(Model.BillYearFilter == 2026 ? "selected" : "")>2026</option><option value="2027" @(Model.BillYearFilter == 2027 ? "selected" : "")>2027</option></select></div>
+            <div class="bill-transaction-filter-actions"><button type="submit" class="btn btn-success">Search</button><a class="btn btn-outline-secondary" href="@Url.Action("BillTransaction", "Account")">Clear</a></div>
+        </form>
+
+        @if (bills.Any())
+        {
+            <div class="bill-history-table-wrap"><table class="bill-history-table"><thead><tr><th>Bill Number</th><th>Bill Date</th><th>Total Amount (&#8377;)</th><th>View Bill</th></tr></thead><tbody>@foreach (var bill in bills) { <tr><td><strong>@bill.BillNumber</strong><span>Bill ID #@bill.BillId</span></td><td>@bill.BillDate.ToString("dd MMM yyyy")</td><td>&#8377;@bill.TotalAmount.ToString("N2")</td><td><a class="btn btn-sm btn-outline-success" href="@Url.Action("BillTransaction", "Account", new { billNumber = Model.BillNumberFilter, billDate = Model.BillDateFilter, billMonth = Model.BillMonthFilter, billYear = Model.BillYearFilter, viewBillId = bill.BillId })#bill-details">View Bill</a></td></tr> }</tbody></table></div>
+        }
+        else
+        {
+            <p class="bill-history-empty">No bills match the selected filters.</p>
+        }
+
+        @if (Model.SelectedBill != null)
+        {
+            <div class="bill-details" id="bill-details">
+                <div class="bill-details-heading"><div><p class="dashboard-kicker mb-1">Bill details</p><h3>@Model.SelectedBill.BillNumber</h3><p>@Model.SelectedBill.BillDate.ToString("dd MMM yyyy")</p></div><strong>&#8377;@Model.SelectedBill.TotalAmount.ToString("N2")</strong></div>
+                <div class="bill-history-table-wrap"><table class="bill-history-table bill-items-table"><thead><tr><th>Product ID</th><th>Product Name</th><th>Quantity Purchased</th><th>Unit</th><th>Price</th><th>Amount (&#8377;)</th></tr></thead><tbody>@foreach (var item in selectedBillItems) { <tr><td>@item.ProductId</td><td>@item.ProductName</td><td>@item.QuantityPurchased.ToString("0.##")</td><td>@item.Unit</td><td>&#8377;@item.Price.ToString("N2")</td><td>&#8377;@item.Amount.ToString("N2")</td></tr> }</tbody></table></div>
+                <div class="bill-details-total"><span>Total Amount</span><strong>&#8377;@Model.SelectedBill.TotalAmount.ToString("N2")</strong></div>
+            </div>
+        }
+    </section>
+</main>

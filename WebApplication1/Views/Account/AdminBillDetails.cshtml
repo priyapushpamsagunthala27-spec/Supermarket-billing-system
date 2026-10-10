@@ -1,0 +1,42 @@
+@model WebApplication1.Models.AdminBillDetailsViewModel
+@using System.Linq
+@{
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    ViewBag.Title = "Bill Details";
+    var items = Model.Items ?? Enumerable.Empty<WebApplication1.Models.BillingItemViewModel>();
+}
+
+<main class="admin-bills-page">
+    <header class="admin-bills-page-header">
+        <div>
+            <p class="dashboard-kicker mb-2">PMP Supermarket Billing System</p>
+            <h1>Bill Details</h1>
+            <p>Bill @Model.BillNumber for @Model.Username.</p>
+        </div>
+        <a class="btn btn-outline-secondary" href="@Url.Action("AdminBillsHistory", "Account")">Back to Admin Bills History</a>
+    </header>
+
+    <section class="admin-bills-card admin-bill-details-card" aria-labelledby="admin-bill-details-title">
+        <div class="admin-bill-summary">
+            <div><span>User ID</span><strong>@Model.UserId</strong></div>
+            <div><span>Username</span><strong>@Model.Username</strong></div>
+            <div><span>Bill Number</span><strong>@Model.BillNumber</strong></div>
+            <div><span>Bill Date</span><strong>@Model.BillDate.ToString("dd MMM yyyy, hh:mm tt")</strong></div>
+            <div><span>Total Amount</span><strong>&#8377;@Model.TotalAmount.ToString("N2")</strong></div>
+        </div>
+        <div class="admin-bills-table-scroll">
+            <table class="admin-bills-table admin-bill-items-table">
+                <thead>
+                    <tr><th>Product ID</th><th>Product Name</th><th>Quantity Purchased</th><th>Unit</th><th>Price (&#8377;)</th><th>Amount (&#8377;)</th></tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in items)
+                    {
+                        <tr><td>@item.ProductId</td><td>@item.ProductName</td><td>@item.QuantityPurchased.ToString("0.##")</td><td>@item.Unit</td><td>&#8377;@item.Price.ToString("N2")</td><td>&#8377;@item.Amount.ToString("N2")</td></tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+        <div class="admin-bill-total"><span>Total Amount</span><strong>&#8377;@Model.TotalAmount.ToString("N2")</strong></div>
+    </section>
+</main>

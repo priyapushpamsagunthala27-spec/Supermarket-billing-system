@@ -1,0 +1,43 @@
+@model WebApplication1.Models.BillingViewModel
+@using System.Linq
+@{
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    ViewBag.Title = "Billing Section";
+    var items = Model.Items ?? Enumerable.Empty<WebApplication1.Models.BillingItemViewModel>();
+}
+
+<main class="billing-page">
+    <header class="billing-page-header">
+        <div>
+            <p class="dashboard-kicker mb-2">PMP Supermarket Billing</p>
+            <h1>Billing Section</h1>
+            <p>Bill ID: <strong>@Model.BillNumber</strong></p>
+        </div>
+        @using (Html.BeginForm("Logout", "Account", FormMethod.Post, new { @class = "d-inline" }))
+        {
+            @Html.AntiForgeryToken()
+            <button type="submit" class="btn btn-outline-danger">Logout</button>
+        }
+    </header>
+
+    <section class="billing-card" aria-labelledby="billing-items-title">
+        <h2 id="billing-items-title">Purchased Products</h2>
+        <div class="billing-items-scroll">
+            @foreach (var item in items)
+            {
+                <article class="billing-item-row">
+                    <div><span class="billing-item-label">Product ID</span><strong>@item.ProductId</strong></div>
+                    <div><span class="billing-item-label">Product Name</span><strong>@item.ProductName</strong></div>
+                    <div><span class="billing-item-label">Quantity Purchased</span><strong>@item.QuantityPurchased.ToString("0.##") @item.Unit</strong></div>
+                    <div><span class="billing-item-label">Price</span><strong>&#8377;@item.Price.ToString("0.00")</strong></div>
+                    <div><span class="billing-item-label">Amount</span><strong>&#8377;@item.Amount.ToString("0.00")</strong></div>
+                </article>
+            }
+        </div>
+        <div class="billing-total"><span>Total Amount</span><strong>&#8377;@Model.TotalAmount.ToString("0.00")</strong></div>
+    </section>
+
+    <div class="billing-page-actions">
+        <a class="btn btn-success" href="@Url.Action("UserDashboard", "Account")">Back to User Dashboard</a>
+    </div>
+</main>

@@ -1,0 +1,97 @@
+@model WebApplication1.Models.MonthlySalesStatisticsViewModel
+@using System
+@using System.Globalization
+@using System.Linq
+@using System.Web.Helpers
+@{
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    ViewBag.Title = "Monthly Sales Statistics";
+    var days = Model.Days ?? Enumerable.Empty<WebApplication1.Models.SalesDayViewModel>();
+    var monthName = CultureInfo.CurrentCulture.DateTimeFormat.GetMonthName(Model.Month);
+    var hasSales = days.Any(item => item.Amount != 0m);
+}
+
+<main class="sales-statistics-page sales-monthly-page">
+    <header class="sales-statistics-header">
+        <div>
+            <p class="sales-statistics-kicker">PMP Supermarket / Sales intelligence</p>
+            <h1>Monthly Sales Statistics</h1>
+            <p>Track daily movement across the selected reporting period.</p>
+        </div>
+        <a class="btn btn-outline-secondary" href="@Url.Action("AdminDashboard", "Account")">Back to Admin Dashboard</a>
+    </header>
+
+    <form class="sales-filter-panel" method="get" action="@Url.Action("Monthly", "Sales")">
+        <div><label for="sales-month">Month</label><select id="sales-month" name="month" class="form-select">
+            @for (int month = 1; month <= 12; month++) { <option value="@month" selected="@(month == Model.Month ? "selected" : null)">@CultureInfo.CurrentCulture.DateTimeFormat.GetMonthName(month)</option> }
+        </select></div>
+        <div><label for="sales-year">Year</label><select id="sales-year" name="year" class="form-select">
+            <option value="2026" selected="@(Model.Year == 2026 ? "selected" : null)">2026</option>
+            <option value="2027" selected="@(Model.Year == 2027 ? "selected" : null)">2027</option>
+        </select></div>
+        <button type="submit" class="btn btn-success">Search</button>
+    </form>
+
+    <section class="sales-chart-panel" aria-labelledby="monthly-chart-title">
+        <div class="sales-chart-panel-heading"><div><p class="sales-statistics-kicker">Selected period</p><h2 id="monthly-chart-title">@monthName @Model.Year</h2></div><span class="sales-total-badge">&#8377;@days.Sum(item => item.Amount).ToString("N2")</span></div>
+        @if (hasSales)
+        {
+            <div id="monthly-sales-chart" class="sales-chart sales-line-chart" aria-label="Monthly daily sales line chart"></div>
+        }
+        else
+        {
+            <div class="sales-empty sales-monthly-empty">No sales data available for this period.</div>
+        }
+    </section>
+
+    <section class="sales-breakdown-panel" aria-labelledby="monthly-breakdown-title">
+        <div class="sales-breakdown-heading"><h2 id="monthly-breakdown-title">Daily totals</h2><button type="button" class="btn btn-success" id="download-monthly-report" @(hasSales ? null : "disabled")>Download Report</button></div>
+        @if (hasSales)
+        {
+            <div class="sales-table-wrap"><table class="sales-table"><thead><tr><th>Date</th><th>Sales (&#8377;)</th></tr></thead><tbody>
+                @foreach (var day in days) { <tr><td>@day.SaleDate.ToString("dd MMM yyyy")</td><td>&#8377;@day.Amount.ToString("N2")</td></tr> }
+            </tbody></table></div>
+        }
+    </section>
+</main>
+
+@section scripts {
+    <script src="https://code.highcharts.com/highcharts.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script>
+        (function () {
+            var days = @Html.Raw(Json.Encode(days.Select(item => new { date = item.SaleDate.ToString("dd MMM"), amount = item.Amount })));
+            var hasSales = @hasSales.ToString().ToLowerInvariant();
+            if (!hasSales) { return; }
+            var chart = Highcharts.chart('monthly-sales-chart', {
+                chart: { type: 'line', backgroundColor: 'transparent' },
+                title: { text: null }, credits: { enabled: false },
+                xAxis: { categories: days.map(function (item) { return item.date; }), tickInterval: Math.max(1, Math.ceil(days.length / 10)) },
+                yAxis: { title: { text: 'Sales (INR)' }, min: 0 },
+                tooltip: { valuePrefix: '₹', valueDecimals: 2 },
+                legend: { enabled: false },
+                plotOptions: { series: { color: '#d56b3f', lineWidth: 4, marker: { radius: 4 } } },
+                series: [{ name: 'Daily sales', data: days.map(function (item) { return item.amount; }) }]
+            });
+
+            document.getElementById('download-monthly-report').addEventListener('click', function () {
+                var button = this;
+                button.disabled = true;
+                html2canvas(document.getElementById('monthly-sales-chart'), { backgroundColor: '#ffffff', scale: 2 }).then(function (canvas) {
+                    var pdf = new window.jspdf.jsPDF('p', 'mm', 'a4');
+                    pdf.setFontSize(18); pdf.text('Monthly Sales Report - @monthName @Model.Year', 15, 18);
+                    pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 15, 28, 180, 85);
+                    pdf.setFontSize(12); pdf.text('Daily totals', 15, 124);
+                    pdf.setFontSize(9); pdf.text('Date', 15, 132); pdf.text('Sales (INR)', 125, 132);
+                    var y = 139;
+                    @foreach (var day in days)
+                    {
+                        <text>if (y > 278) { pdf.addPage(); y = 18; } y += 6; pdf.text('@day.SaleDate.ToString("dd MMM yyyy")', 15, y); pdf.text('Rs. @day.Amount.ToString("N2")', 125, y);</text>
+                    }
+                    pdf.save('monthly-sales-report-@(Model.Year)-@(Model.Month.ToString("00")).pdf');
+                }).finally(function () { button.disabled = false; });
+            });
+        }());
+    </script>
+}

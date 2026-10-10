@@ -1,0 +1,98 @@
+@model WebApplication1.Models.ProductDeleteViewModel
+@{
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    ViewBag.Title = "Delete Product";
+}
+
+<main class="product-page">
+    <div class="product-page-header">
+        <div>
+            <p class="dashboard-kicker mb-1">Catalogue workspace</p>
+            <h1 class="product-page-title mb-2">Delete Product</h1>
+            <p class="product-page-intro mb-0">Select a product and confirm before permanently removing it.</p>
+        </div>
+        <div class="product-id-note"><span class="product-id-symbol">#</span><span><strong>Product ID</strong><small>Exact record selection</small></span></div>
+    </div>
+
+    @if (ViewBag.SuccessMessage != null)
+    {
+        <div class="alert alert-success product-success" role="status">@ViewBag.SuccessMessage</div>
+    }
+    @Html.ValidationSummary(true, "The product could not be deleted.", new { @class = "alert alert-danger" })
+
+    <section class="product-form product-selection-panel" aria-labelledby="selection-title">
+        <div class="product-panel-heading"><span class="product-panel-icon">&#128269;</span><div><h2 id="selection-title">Find a product</h2><p>Choose a category and product name to load the current record.</p></div></div>
+        <div class="row g-3">
+            <div class="col-md-6"><label class="form-label" for="lookupCategory">Product category</label><select id="lookupCategory" class="form-select"><option value="">Select a category</option>@foreach (string category in Model.Categories ?? new string[0]) { <option value="@category">@category</option> }</select></div>
+            <div class="col-md-6"><label class="form-label" for="lookupProductName">Product name</label><select id="lookupProductName" class="form-select" disabled="disabled"><option value="">Select a product</option></select></div>
+        </div>
+        <p id="lookupMessage" class="lookup-message" role="status"></p>
+    </section>
+
+    <section id="detailsPanel" class="product-form delete-details-panel d-none" aria-labelledby="details-title">
+        <div class="product-panel-heading"><span class="product-panel-icon icon-delete">&#128465;</span><div><h2 id="details-title">Product details</h2><p>Review this record before permanent deletion.</p></div></div>
+        <dl class="product-details-list">
+            <div><dt>Product ID</dt><dd id="detailProductId"></dd></div>
+            <div><dt>Product name</dt><dd id="detailProductName"></dd></div>
+            <div><dt>Category</dt><dd id="detailCategory"></dd></div>
+            <div><dt>Price</dt><dd id="detailPrice"></dd></div>
+            <div><dt>Quantity</dt><dd id="detailQuantity"></dd></div>
+            <div><dt>Quantity description</dt><dd id="detailQuantityDescription"></dd></div>
+            <div><dt>Unit</dt><dd id="detailUnit"></dd></div>
+            <div><dt>Product image</dt><dd id="detailImage"></dd></div>
+        </dl>
+        @using (Html.BeginForm("Delete", "Product", FormMethod.Post, new { id = "deleteForm" }))
+        {
+            @Html.AntiForgeryToken()
+            <input type="hidden" id="deleteProductId" name="ProductId" />
+            <div class="product-form-actions"><a class="btn btn-outline-secondary" href="@Url.Action("AdminDashboard", "Account")">Back to Admin Dashboard</a><button type="submit" class="btn btn-danger">Delete Product</button></div>
+        }
+    </section>
+</main>
+
+@section scripts {
+    <script>
+        (function () {
+            var category = document.getElementById('lookupCategory');
+            var productNames = document.getElementById('lookupProductName');
+            var message = document.getElementById('lookupMessage');
+            var detailsPanel = document.getElementById('detailsPanel');
+            var productNamesUrl = '@Url.Action("ProductNames", "Product")';
+            var productDetailsUrl = '@Url.Action("ProductDetails", "Product")';
+            function setMessage(text) { message.textContent = text || ''; }
+            category.addEventListener('change', function () {
+                productNames.innerHTML = '<option value="">Select a product</option>';
+                productNames.disabled = true;
+                detailsPanel.classList.add('d-none');
+                if (!category.value) return;
+                setMessage('Loading products...');
+                $.getJSON(productNamesUrl, { category: category.value }, function (names) {
+                    $.each(names, function (_, name) { $('<option>').val(name).text(name).appendTo(productNames); });
+                    productNames.disabled = false;
+                    setMessage(names.length ? 'Select a product to review its details.' : 'No products found in this category.');
+                }).fail(function () { setMessage('Unable to load products.'); });
+            });
+            productNames.addEventListener('change', function () {
+                if (!productNames.value) return;
+                setMessage('Loading product details...');
+                $.getJSON(productDetailsUrl, { category: category.value, productName: productNames.value }, function (product) {
+                    if (!product) { setMessage('Product details could not be found.'); return; }
+                    $('#detailProductId').text('#' + product.ProductId);
+                    $('#detailProductName').text(product.ProductName);
+                    $('#detailCategory').text(product.Category);
+                    $('#detailPrice').text('\u20b9' + Number(product.Price).toFixed(2));
+                    $('#detailQuantity').text(product.Quantity + ' ' + product.Unit);
+                    $('#detailQuantityDescription').text(product.QuantityDescription || 'None');
+                    $('#detailUnit').text(product.Unit);
+                    $('#detailImage').text(product.ProductImage || 'None');
+                    $('#deleteProductId').val(product.ProductId);
+                    detailsPanel.classList.remove('d-none');
+                    setMessage('Product details loaded.');
+                }).fail(function () { setMessage('Unable to load product details.'); });
+            });
+            $('#deleteForm').on('submit', function () {
+                return window.confirm('Delete this product permanently? This action cannot be undone.');
+            });
+        }());
+    </script>
+}

@@ -1,0 +1,90 @@
+@model WebApplication1.Models.TodaySalesStatisticsViewModel
+@using System.Linq
+@using System.Web
+@using System.Web.Helpers
+@{
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    ViewBag.Title = "Today's Sale Statistics";
+    var categories = Model.Categories ?? Enumerable.Empty<WebApplication1.Models.SalesCategoryViewModel>();
+}
+
+<main class="sales-statistics-page">
+    <header class="sales-statistics-header">
+        <div>
+            <p class="sales-statistics-kicker">PMP Supermarket / Sales intelligence</p>
+            <h1>Today's Sale Statistics</h1>
+            <p>Category performance for @Model.SaleDate.ToString("dd MMMM yyyy").</p>
+        </div>
+        <div class="sales-statistics-actions">
+            <button type="button" class="btn btn-success" id="download-today-report">Download Report</button>
+            <a class="btn btn-outline-secondary" href="@Url.Action("AdminDashboard", "Account")">Back to Admin Dashboard</a>
+        </div>
+    </header>
+
+    <section class="sales-chart-panel" aria-labelledby="today-chart-title">
+        <div class="sales-chart-panel-heading">
+            <div><p class="sales-statistics-kicker">Daily mix</p><h2 id="today-chart-title">Sales by category</h2></div>
+            <span class="sales-total-badge">&#8377;@categories.Sum(item => item.Amount).ToString("N2")</span>
+        </div>
+        <div id="today-sales-chart" class="sales-chart" aria-label="Today's sales by category"></div>
+    </section>
+
+    <section class="sales-breakdown-panel" aria-labelledby="today-breakdown-title">
+        <h2 id="today-breakdown-title">Category breakdown</h2>
+        <div class="sales-table-wrap">
+            <table class="sales-table">
+                <thead><tr><th>Category</th><th>Amount</th><th>Share</th></tr></thead>
+                <tbody>
+                    @foreach (var item in categories)
+                    {
+                        <tr><td>@item.Category</td><td>&#8377;@item.Amount.ToString("N2")</td><td>@item.Percentage.ToString("N2")%</td></tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+        @if (!categories.Any()) { <p class="sales-empty">No sales have been recorded today.</p> }
+    </section>
+</main>
+
+@section scripts {
+    <script src="https://code.highcharts.com/highcharts.js"></script>
+    <script src="https://code.highcharts.com/highcharts-3d.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script>
+        (function () {
+            var categories = @Html.Raw(Json.Encode(categories.Select(item => new { name = item.Category, y = item.Amount }))); 
+            var chart = Highcharts.chart('today-sales-chart', {
+                chart: { type: 'pie', options3d: { enabled: true, alpha: 45, beta: 0 }, backgroundColor: 'transparent' },
+                title: { text: null },
+                credits: { enabled: false },
+                tooltip: { pointFormat: '<b>&#8377;{point.y:,.2f}</b> ({point.percentage:.1f}%)' },
+                plotOptions: { pie: { depth: 38, allowPointSelect: true, cursor: 'pointer', dataLabels: { enabled: true, format: '<b>{point.name}</b><br>&#8377;{point.y:,.2f}' } } },
+                series: [{ name: 'Sales', data: categories }]
+            });
+
+            document.getElementById('download-today-report').addEventListener('click', function () {
+                var button = this;
+                button.disabled = true;
+                html2canvas(document.getElementById('today-sales-chart'), { backgroundColor: '#ffffff', scale: 2 }).then(function (canvas) {
+                    var pdf = new window.jspdf.jsPDF('p', 'mm', 'a4');
+                    pdf.setFontSize(18);
+                    pdf.text("Today's Sales Report", 15, 18);
+                    pdf.setFontSize(10);
+                    pdf.text('@Model.SaleDate.ToString("dd MMMM yyyy")', 15, 25);
+                    pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 15, 32, 180, 92);
+                    pdf.setFontSize(12);
+                    pdf.text('Category breakdown', 15, 136);
+                    pdf.setFontSize(10);
+                    var y = 145;
+                    pdf.text('Category', 15, y); pdf.text('Amount', 115, y); pdf.text('Share', 160, y);
+                    @foreach (var item in categories)
+                    {
+                        <text>y += 7; pdf.text('@Html.Raw(HttpUtility.JavaScriptStringEncode(item.Category))', 15, y); pdf.text('Rs. @item.Amount.ToString("N2")', 115, y); pdf.text('@item.Percentage.ToString("N2")%', 160, y);</text>
+                    }
+                    pdf.save('todays-sales-report.pdf');
+                }).finally(function () { button.disabled = false; });
+            });
+        }());
+    </script>
+}

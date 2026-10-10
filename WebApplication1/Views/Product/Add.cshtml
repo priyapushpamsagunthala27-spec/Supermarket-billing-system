@@ -1,0 +1,104 @@
+@model WebApplication1.Models.AddProductViewModel
+@{
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    ViewBag.Title = "Add Product";
+}
+
+<main class="product-page">
+    <div class="product-page-header">
+        <div>
+            <p class="dashboard-kicker mb-1">Catalogue workspace</p>
+            <h1 class="product-page-title mb-2">Add Product</h1>
+            <p class="product-page-intro mb-0">Bring a new product into the PMP Supermarket catalogue.</p>
+        </div>
+        <div class="product-id-note"><span class="product-id-symbol">#</span><span><strong>Product ID</strong><small>Auto-generated after saving</small></span></div>
+    </div>
+
+    @if (ViewBag.SuccessMessage != null)
+    {
+        <div class="alert alert-success product-success" role="status">
+            <strong>@ViewBag.SuccessMessage</strong>
+            <span>Generated Product ID: <b>#@Model.SavedProductId</b></span>
+        </div>
+    }
+
+    @Html.ValidationSummary(true, "Please correct the highlighted details.", new { @class = "alert alert-danger" })
+
+    @using (Html.BeginForm("Add", "Product", FormMethod.Post, new { enctype = "multipart/form-data", @class = "product-form" }))
+    {
+        @Html.AntiForgeryToken()
+        <div class="product-form-grid">
+            <section class="photo-panel" aria-labelledby="photo-title">
+                <div class="product-panel-heading">
+                    <span class="product-panel-icon">&#128247;</span>
+                    <div><h2 id="photo-title">Product Photo</h2><p>Use a clear JPG, JPEG, or PNG image.</p></div>
+                </div>
+                <div class="photo-preview" id="photoPreview"><span class="photo-preview-icon">&#128444;</span><span>Preview appears here</span></div>
+                <label class="photo-upload-button" for="ProductPhoto">Choose photo</label>
+                @Html.TextBoxFor(model => model.ProductPhoto, new { type = "file", accept = ".jpg,.jpeg,.png,image/jpeg,image/png", id = "ProductPhoto", @class = "photo-input" })
+                @Html.ValidationMessageFor(model => model.ProductPhoto, null, new { @class = "text-danger small" })
+                <small class="photo-help">Maximum file size: 5 MB</small>
+            </section>
+
+            <section class="details-panel" aria-labelledby="details-title">
+                <div class="product-panel-heading"><span class="product-panel-icon">&#128722;</span><div><h2 id="details-title">Product Details</h2><p>Enter the information used at checkout.</p></div></div>
+                <div class="row g-3">
+                    <div class="col-12">
+                        @Html.LabelFor(model => model.ProductName, new { @class = "form-label" })
+                        @Html.TextBoxFor(model => model.ProductName, new { @class = "form-control", placeholder = "e.g. Basmati Rice", maxlength = "150" })
+                        @Html.ValidationMessageFor(model => model.ProductName, null, new { @class = "text-danger small" })
+                    </div>
+                    <div class="col-12">
+                        @Html.LabelFor(model => model.Category, new { @class = "form-label" })
+                        @Html.DropDownListFor(model => model.Category, new SelectList(Model.Categories), "Select a category", new { @class = "form-select" })
+                        @Html.ValidationMessageFor(model => model.Category, null, new { @class = "text-danger small" })
+                    </div>
+                    <div class="col-md-6">
+                        @Html.LabelFor(model => model.Price, new { @class = "form-label" })
+                        <div class="input-group"><span class="input-group-text">&#8377;</span>@Html.TextBoxFor(model => model.Price, new { @class = "form-control", type = "number", min = "0.01", step = "0.01", placeholder = "0.00" })</div>
+                        @Html.ValidationMessageFor(model => model.Price, null, new { @class = "text-danger small" })
+                    </div>
+                    <div class="col-md-6">
+                        @Html.LabelFor(model => model.Quantity, new { @class = "form-label" })
+                        @Html.TextBoxFor(model => model.Quantity, new { @class = "form-control", type = "number", min = "0.01", step = "0.01", placeholder = "e.g. 2" })
+                        @Html.ValidationMessageFor(model => model.Quantity, null, new { @class = "text-danger small" })
+                    </div>
+                    <div class="col-12">
+                        @Html.LabelFor(model => model.QuantityDescription, new { @class = "form-label" })
+                        @Html.TextBoxFor(model => model.QuantityDescription, new { @class = "form-control", maxlength = "50", placeholder = "e.g. 250g or 1 litre" })
+                        @Html.ValidationMessageFor(model => model.QuantityDescription, null, new { @class = "text-danger small" })
+                    </div>
+                    <div class="col-12">
+                        @Html.LabelFor(model => model.Unit, new { @class = "form-label" })
+                        @Html.DropDownListFor(model => model.Unit, new SelectList(Model.Units), "Select a unit", new { @class = "form-select" })
+                        @Html.ValidationMessageFor(model => model.Unit, null, new { @class = "text-danger small" })
+                    </div>
+                </div>
+            </section>
+        </div>
+        <div class="product-form-actions">
+            <a class="btn btn-outline-secondary" href="@Url.Action("AdminDashboard", "Account")">Back to Admin Dashboard</a>
+            <div class="product-action-group"><button type="reset" class="btn btn-light product-reset">Clear / Reset</button><button type="submit" class="btn btn-success product-submit">Add Product</button></div>
+        </div>
+    }
+</main>
+
+@section scripts {
+    @Scripts.Render("~/bundles/jqueryval")
+    <script>
+        (function () {
+            var input = document.getElementById('ProductPhoto');
+            var preview = document.getElementById('photoPreview');
+            if (!input || !preview) return;
+            input.addEventListener('change', function () {
+                var file = input.files && input.files[0];
+                if (!file) return;
+                var reader = new FileReader();
+                reader.onload = function (event) {
+                    preview.innerHTML = '<img src="' + event.target.result + '" alt="Product preview" />';
+                };
+                reader.readAsDataURL(file);
+            });
+        }());
+    </script>
+}

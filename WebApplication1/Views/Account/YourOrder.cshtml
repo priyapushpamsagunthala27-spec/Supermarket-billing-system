@@ -1,0 +1,39 @@
+@model WebApplication1.Models.YourOrderViewModel
+@using System.Linq
+@{
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    ViewBag.Title = "Your Order";
+    var items = Model.Items ?? Enumerable.Empty<WebApplication1.Models.OrderItemViewModel>();
+}
+
+<main class="order-page">
+    <header class="order-page-header">
+        <p class="dashboard-kicker mb-2">PMP Supermarket Billing</p>
+        <h1>Your Order - @Model.Username</h1>
+    </header>
+
+    <section class="order-card" aria-labelledby="order-items-title">
+        <h2 id="order-items-title">Products</h2>
+        <div class="order-items-scroll">
+            @if (items.Any())
+            {
+                foreach (var item in items)
+                {
+                    <div class="order-item-row">
+                        <div><span class="order-item-label">Product ID</span><strong>@item.ProductId</strong></div>
+                        <div><span class="order-item-label">Product Name</span><strong>@item.ProductName</strong></div>
+                        <div><span class="order-item-label">Final Needed Quantity + Unit</span><strong>@item.NeededQuantity.ToString("0.##") @item.Unit</strong></div>
+                    </div>
+                }
+            }
+            else
+            {
+                <p class="order-empty">No ordered products found.</p>
+            }
+        </div>
+    </section>
+
+    <div class="order-page-actions">
+        <a class="btn btn-success" href="@Url.Action("BillingSection", "Account")">Proceed to Billing</a>
+    </div>
+</main>

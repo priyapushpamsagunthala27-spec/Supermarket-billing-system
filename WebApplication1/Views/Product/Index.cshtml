@@ -1,0 +1,169 @@
+@model WebApplication1.Models.ProductCatalogViewModel
+@using System.Linq
+@{
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    ViewBag.Title = "Product Dashboard";
+    var products = Model.Products ?? Enumerable.Empty<WebApplication1.Models.Product>();
+}
+
+<main class="catalog-page" id="catalog-top">
+    <aside class="catalog-sidebar" aria-label="Product dashboard navigation">
+        <a class="catalog-sidebar-brand" href="#catalog-top">
+            <span class="pmp-logo catalog-logo" aria-hidden="true">PMP</span>
+            <span>
+                <strong>PMP Supermarket</strong>
+                <small>Product dashboard</small>
+            </span>
+        </a>
+
+        <nav class="catalog-nav">
+            <a class="catalog-nav-option catalog-nav-option-active" href="#catalog-top">
+                <span class="catalog-nav-icon" aria-hidden="true">&#9632;</span>
+                <span>Product Catalog</span>
+            </a>
+            <div class="catalog-category-list" aria-label="Product categories">
+                @foreach (var category in Model.Categories)
+                {
+                    var categoryId = "category-" + category.Replace(" ", "-").ToLowerInvariant();
+                    <a class="catalog-category-link" href="#@categoryId" data-category="@category">
+                        <span class="catalog-category-dot" aria-hidden="true"></span>
+                        <span>@category</span>
+                    </a>
+                }
+            </div>
+            <a class="catalog-nav-option catalog-nav-option-disabled" href="#" aria-disabled="true" onclick="return false;">
+                <span class="catalog-nav-icon" aria-hidden="true">&#8644;</span>
+                <span>Bill Transaction</span>
+                <small>Coming soon</small>
+            </a>
+        </nav>
+
+        <a class="catalog-back-link" href="@Url.Action("AdminDashboard", "Account")">&#8592; Back to dashboard</a>
+    </aside>
+
+    <section class="catalog-content" aria-labelledby="catalog-title">
+        <header class="catalog-header">
+            <div>
+                <p class="dashboard-kicker mb-2">Inventory overview</p>
+                <h1 id="catalog-title">Product Catalog</h1>
+                <p>Browse every product by its database category.</p>
+            </div>
+            <div class="catalog-header-mark" aria-hidden="true">&#10003;</div>
+        </header>
+
+        <div class="catalog-filter" role="search">
+            <label for="category-filter">Search by category</label>
+            <div class="catalog-search-wrap">
+                <span aria-hidden="true">&#128269;</span>
+                <input id="category-filter" type="search" placeholder="Type a category, for example Groceries" autocomplete="off" />
+                <button id="clear-category-filter" type="button" title="Clear category filter" aria-label="Clear category filter">&#10005;</button>
+            </div>
+            <span id="category-filter-status" class="catalog-filter-status" aria-live="polite"></span>
+        </div>
+
+        <div class="catalog-sections" id="catalog-sections">
+            @foreach (var category in Model.Categories)
+            {
+                var categoryId = "category-" + category.Replace(" ", "-").ToLowerInvariant();
+                var categoryProducts = products.Where(product => string.Equals(product.Category, category, System.StringComparison.OrdinalIgnoreCase)).ToList();
+                <section class="catalog-category-section" id="@categoryId" data-category-section="@category" aria-labelledby="@categoryId-title">
+                    <div class="catalog-section-heading">
+                        <div>
+                            <p class="catalog-section-label">Category</p>
+                            <h2 id="@categoryId-title">@category</h2>
+                        </div>
+                        <span class="catalog-count">@categoryProducts.Count @(categoryProducts.Count == 1 ? "product" : "products")</span>
+                    </div>
+
+                    @if (categoryProducts.Any())
+                    {
+                        <div class="catalog-product-grid">
+                            @foreach (var product in categoryProducts)
+                            {
+                                var isLowStock = product.Quantity < 5;
+                                var isAvailable = product.Quantity > 0;
+                                <article class="catalog-product-card">
+                                    <div class="catalog-product-image-wrap">
+                                        @if (!string.IsNullOrWhiteSpace(product.ProductImage))
+                                        {
+                                            <img class="catalog-product-image" src="@Url.Content(product.ProductImage)" alt="@product.ProductName" />
+                                        }
+                                        else
+                                        {
+                                            <div class="catalog-product-image-placeholder" aria-label="No image available">&#128722;</div>
+                                        }
+                                        <div class="catalog-product-hover" aria-label="Additional details for @product.ProductName">
+                                            <span>Today's Sales <strong>&#8377;@product.TodaySales.ToString("N2")</strong></span>
+                                            <span>Status <strong class="@(isAvailable ? "is-available" : "is-unavailable")">@(isAvailable ? "Available" : "Not Available")</strong></span>
+                                        </div>
+                                    </div>
+                                    <div class="catalog-product-details">
+                                        <h3>@product.ProductName</h3>
+                                        <p class="catalog-product-quantity">@(string.IsNullOrWhiteSpace(product.QuantityDescription) ? product.Quantity.ToString("0.##") + " " + product.Unit : product.QuantityDescription)</p>
+                                        <p class="catalog-product-meta">Stock: @product.Quantity.ToString("0.##") @product.Unit</p>
+                                        <div class="catalog-product-footer">
+                                            <span class="catalog-stock @(isLowStock ? "catalog-stock-low" : "catalog-stock-high")">
+                                                <span aria-hidden="true">@Html.Raw(isLowStock ? "&#9888;" : "&#10003;")</span> @(isLowStock ? "Low Stock" : "Stocked")
+                                            </span>
+                                            <strong class="catalog-product-price">&#8377;@product.Price.ToString("N2")</strong>
+                                        </div>
+                                    </div>
+                                </article>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <p class="catalog-empty-category">No products in this category yet.</p>
+                    }
+                </section>
+            }
+            <p class="catalog-no-results" id="catalog-no-results">No categories match your search.</p>
+        </div>
+    </section>
+</main>
+
+@section scripts {
+    <script>
+        (function () {
+            var filter = document.getElementById('category-filter');
+            var clearButton = document.getElementById('clear-category-filter');
+            var status = document.getElementById('category-filter-status');
+            var sections = Array.prototype.slice.call(document.querySelectorAll('[data-category-section]'));
+            var noResults = document.getElementById('catalog-no-results');
+
+            function applyCategoryFilter(value) {
+                var query = value.trim().toLowerCase();
+                var visibleCount = 0;
+
+                sections.forEach(function (section) {
+                    var matches = !query || section.getAttribute('data-category-section').toLowerCase().indexOf(query) !== -1;
+                    section.hidden = !matches;
+                    if (matches) {
+                        visibleCount += 1;
+                    }
+                });
+
+                noResults.hidden = visibleCount !== 0;
+                status.textContent = query ? visibleCount + (visibleCount === 1 ? ' category shown' : ' categories shown') : '';
+            }
+
+            filter.addEventListener('input', function () {
+                applyCategoryFilter(filter.value);
+            });
+
+            clearButton.addEventListener('click', function () {
+                filter.value = '';
+                applyCategoryFilter('');
+                filter.focus();
+            });
+
+            document.querySelectorAll('[data-category]').forEach(function (link) {
+                link.addEventListener('click', function () {
+                    filter.value = link.getAttribute('data-category');
+                    applyCategoryFilter(filter.value);
+                });
+            });
+        }());
+    </script>
+}
